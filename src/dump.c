@@ -20,6 +20,13 @@
 
 static size_t get_irep_record_size_1(mrb_state *mrb, mrb_irep *irep);
 
+#if defined(_TMS320C6X) &&  (__TI_COMPILER_VERSION__ < 7004007)
+/* TI's cl6x defines size_t as unsigned int accroding to SPRU187V,
+ * however, SIZE_MAX is defined as INT32_MAX in stdint.h before 7.4.7.
+ * From 7.4.7, it is UINT32_MAX.
+ */
+# error Compiler is too old.
+#endif
 #if UINT32_MAX > SIZE_MAX
 # error This code cannot be built on your environment.
 #endif

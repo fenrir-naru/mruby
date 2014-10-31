@@ -27,6 +27,15 @@
 #define FLO_EPSILON DBL_EPSILON
 #endif
 
+#if defined(_TMS320C6X)
+#ifndef INFINITY
+#define INFINITY str_to_mrb_float("inf")
+#endif
+#ifndef NAN
+#define NAN str_to_mrb_float("nan")
+#endif
+#endif
+
 MRB_API mrb_float
 mrb_to_flo(mrb_state *mrb, mrb_value val)
 {

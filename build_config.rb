@@ -97,3 +97,92 @@ end
 #   conf.test_runner.command = 'env'
 #
 # end
+
+# Define cross build settings
+MRuby::CrossBuild.new('c674x') do |conf|
+  toolchain :gcc
+  
+  # Use standard Kernel#sprintf method
+  conf.gem "#{root}/mrbgems/mruby-sprintf"
+  
+  # Use standard print/puts/p
+  conf.gem "#{root}/mrbgems/mruby-print"
+  
+  # Use standard Time class
+  conf.gem "#{root}/mrbgems/mruby-time" do |g|
+     g.cc.defines += ['USE_SYSTEM_TIMEGM', 'NO_GETTIMEOFDAY', 'NO_GMTIME_R']
+  end
+  
+  # Use standard Math module
+  conf.gem "#{root}/mrbgems/mruby-math"
+  
+  # Use eval method
+  conf.gem "#{root}/mrbgems/mruby-eval"
+  
+  #conf.gem 'examples/mrbgems/c_and_ruby_extension_example'
+  
+  ti_root = ["C:/Tools/Embedded/TI", "C:/Program Files/TI"].find{|dir| FileTest::exist?(dir)}
+  
+  cg_tool_path = "#{ti_root}/ccsv5/tools/compiler/c6000_7.4.11"
+  
+  conf.cc{|cc|
+    cc.command="#{cg_tool_path}/bin/cl6x.exe"
+    cc.flags = [
+        '-mv6740',
+        '--abi=coffabi',
+        '-g',
+        #'--cpp_default', # with define '__STDC_LIMIT_MACROS'
+        '--interrupt_threshold=1000',
+        '--mem_model:data=far',
+        #'-k', # keep assembly language
+        '--gcc',
+        '-U=__GNUC__',
+        '-o1',
+        '-mf5',
+        ]
+    cc.include_paths += [
+        "#{cg_tool_path}/include",
+        "#{ti_root}/dsplib_c674x_3_1_1_1/inc",
+        "#{ti_root}/mathlib_c674x_3_0_2_0/inc"]
+    cc.defines += [
+        '_Bool=int',]
+    cc.option_include_path = '--include_path=%s'
+    cc.option_define = '-D%s'
+    cc.compile_options = "%{flags} --output_file=%{outfile} %{infile}"
+  }
+
+  conf.linker{|linker|
+    linker.command = "#{cg_tool_path}/bin/lnk6x.exe"
+    linker.flags += [
+        '-mv6740',
+        '--abi=coffabi',
+        '-g',
+        '--interrupt_threshold=1000',
+        '--mem_model:data=far',
+        #'-k', # keep assembly language
+        '-z',]
+    #linker.flags_before_libraries = ...
+    linker.libraries = [
+        'mathlib.a674',
+        'dsplib.a674',
+        'libc.a',]
+    linker.flags_after_libraries = [
+        '--reread_libs', 
+        '--warn_sections', 
+        '--rom_model',]
+    linker.library_paths = [
+        "#{cg_tool_path}/lib",
+        "#{ti_root}/mathlib_c674x_3_0_2_0/lib",
+        "#{ti_root}/dsplib_c674x_3_1_1_1/lib",]
+    linker.option_library = '-l%s'
+    linker.option_library_path = '-i%s'
+    linker.link_options = "%{flags} -o %{outfile} %{objs} %{libs}"
+  }
+  
+  conf.archiver{|archiver|
+    archiver.command = "#{cg_tool_path}/bin/ar6x.exe"
+    #archiver.archive_options = 'rs %{outfile} %{objs}'
+  }
+
+  conf.bins = []
+end
