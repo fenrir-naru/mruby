@@ -123,7 +123,19 @@ MRuby::CrossBuild.new('c674x') do |conf|
   
   ti_root = ["C:/Tools/Embedded/TI", "C:/Program Files/TI"].find{|dir| FileTest::exist?(dir)}
   
-  cg_tool_path = "#{ti_root}/ccsv5/tools/compiler/c6000_7.4.11"
+  # Automatically select the newest compiler 
+  cg_tool_path_candidates = Dir::glob("#{ti_root}/ccsv5/tools/compiler/c6000_*").collect{|dir_name|
+    dir_name =~ /_(\d+)\.(\d+)\.(\d+)$/
+    [dir_name, $1.to_i, $2.to_i, $3.to_i]
+  }.sort{|a, b|
+    res = (b[1] <=> a[1])
+    if res == 0 then
+      res = (b[2] <=> a[2])
+      res = (b[3] <=> a[3]) if res == 0
+    end
+    res    
+  }
+  cg_tool_path = cg_tool_path_candidates.first[0]
   
   conf.cc{|cc|
     cc.command="#{cg_tool_path}/bin/cl6x.exe"
